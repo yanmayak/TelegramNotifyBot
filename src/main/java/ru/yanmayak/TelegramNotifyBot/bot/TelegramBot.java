@@ -12,20 +12,20 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 
-    @Value("${bot.token}")
-    private String botToken;
+    private final String botToken;
+    private final String botUsername;
 
-    @Value("${bot.username}")
-    private String botUsername;
+    public TelegramBot(@Value("${bot.token}") String botToken, @Value("${bot.username}") String botUsername) {
+        this.botToken = botToken;
+        this.botUsername = botUsername;
+    }
 
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
             String chatId = update.getMessage().getChatId().toString();
-
             SendMessage message = new SendMessage(chatId, text);
-
             try {
                 execute(message);
             }
