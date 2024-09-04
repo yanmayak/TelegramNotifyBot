@@ -7,12 +7,12 @@ public enum CommandName {
     START("/start"),
     STOP("/stop"),
     HELP("/help"),
-    NO("nocommand");
+    NO("noСommand"),
+    UNKNOWN("unknown");
 
     private final String commandName;
 
     CommandName(String commandName) {
         this.commandName = commandName;
     }
-
 }
