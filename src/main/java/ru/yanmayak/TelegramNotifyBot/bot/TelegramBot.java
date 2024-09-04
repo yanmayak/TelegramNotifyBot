@@ -1,21 +1,27 @@
 package ru.yanmayak.TelegramNotifyBot.bot;
 
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.C;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ru.yanmayak.TelegramNotifyBot.command.CommandName;
+import ru.yanmayak.TelegramNotifyBot.command.Container;
+import ru.yanmayak.TelegramNotifyBot.command.serivce.SendBotMessageServiceImpl;
 
 @Slf4j
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
-
     private final String botToken;
     private final String botUsername;
+    private final Container container;
 
-    public TelegramBot(@Value("${bot.token}") String botToken, @Value("${bot.username}") String botUsername) {
+    @Autowired
+    public TelegramBot(@Value("${bot.token}") String botToken, @Value("${bot.username}") String botUsername, @Lazy Container container) {
+        this.container = container;
         this.botToken = botToken;
         this.botUsername = botUsername;
     }
@@ -23,14 +29,15 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
-            String text = update.getMessage().getText();
-            String chatId = update.getMessage().getChatId().toString();
-            SendMessage message = new SendMessage(chatId, text);
-            try {
-                execute(message);
-            }
-            catch (TelegramApiException e) {
-                log.error("Error sending message", e);
+            if (update.getMessage().isCommand()) {
+                try {
+                    String message = update.getMessage().getText().trim();
+                    container.provide(message).execute(update);
+                } catch (NullPointerException e) {
+                    log.error("Message cannot be null", e);
+                }
+            } else {
+                container.provide(CommandName.NO.getCommandName()).execute(update);
             }
         }
     }
